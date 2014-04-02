@@ -13,10 +13,10 @@
 	</parent>
 
 	<groupId>sc.fiji</groupId>
-	<artifactId>Process_Pixels</artifactId>
+	<artifactId>XYZReader</artifactId>
 	<version>1.0.0</version>
 
-	<name>plugins/Process_Pixels.jar</name>
+	<name>plugins/XYZReader.jar</name>
 	<description>A Maven project implementing an ImageJ 1.x plugin</description>
 
 	<dependencies>
@@ -59,22 +59,31 @@
 					<mainClass>Process_Pixels</mainClass>
 				</configuration>
 			</plugin>
+		 <plugin>
+		  <groupId>org.apache.maven.plugins</groupId>
+		  <artifactId>maven-compiler-plugin</artifactId>
+		  <version>2.3.2</version>
+		  <configuration>
+		   <source>1.8</source>
+		   <target>1.8</target>
+		  </configuration>
+		 </plugin>
 		</plugins>
 	</build>
 
 	<developers>
 		<developer>
 			<id>dscho</id>
-			<name>Johannes Schindelin</name>
-			<email>johannes.schindelin@gmx.de</email>
-			<url>http://loci.wisc.edu/people/johannes-schindelin</url>
-			<organization>UW-Madison LOCI</organization>
-			<organizationUrl>http://loci.wisc.edu/</organizationUrl>
+			<name>Seth Winfree</name>
+			<email>winfrees@iupui.edu</email>
+			<url></url>
+			<organization>Indiana University</organization>
+			<organizationUrl>http://www.iupui.edu/</organizationUrl>
 			<roles>
 				<role>architect</role>
 				<role>developer</role>
 			</roles>
-			<timezone>-6</timezone>
+			<timezone>-5</timezone>
 		</developer>
 	</developers>
 
