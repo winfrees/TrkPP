@@ -13,10 +13,10 @@
 	</parent>
 
 	<groupId>sc.fiji</groupId>
-	<artifactId>XYZReader</artifactId>
+	<artifactId>TrkPP</artifactId>
 	<version>1.0.0</version>
 
-	<name>plugins/XYZReader.jar</name>
+	<name>plugins/TrkPP.jar</name>
 	<description>A Maven project implementing an ImageJ 1.x plugin</description>
 
 	<dependencies>
