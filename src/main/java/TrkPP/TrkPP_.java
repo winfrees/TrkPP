@@ -10,12 +10,18 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.gui.NewImage;
 import ij.measure.Measurements;
 import ij.measure.ResultsTable;
 import ij.plugin.ImageCalculator;
 import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.filter.PlugInFilter;
+import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
+import ij.process.StackProcessor;
+import java.awt.Image;
+import java.awt.image.ColorModel;
 
 /**
  *
@@ -139,33 +145,29 @@ public class TrkPP_ implements PlugInFilter {
      
       
        for(int n = 1; n <= stacks[2].getSize(); n++){
-            //IJ.log("Analyzing slice: " + n);
-		ImageProcessor ipStack = isResult2.getProcessor(n);
+       
+		ImageProcessor ipStack = isResult2.getProcessor(n); 
 		ipStack.setThreshold(150, 255, ImageProcessor.RED_LUT);
 		maskCells.analyze(impResult2, ipStack);
-                
-                
-                //end = rt2.getCounter();
-                //IJ.log("Rt Counter at " + rt2.getCounter());
-                //rt2.show("rt2");
                 end = rt2.getCounter();
-                
-                //IJ.log("Starting at " +count+ " and going to" + end);
-                
-                for(int m = count; m <= end-1; m++ ){
-                    //IJ.log("Analyzing value: " + m);
-                    //IJ.log("Counter at: " + rt2.getCounter());
-                rt2.setValue("Slice", m, n);         
-                }
+                for(int m = count; m <= end-1; m++ ){rt2.setValue("Slice", m, n);}
                 count = end;
 		ImagePlus maskImage2 = maskParticles.getOutputImage();
 		ImageProcessor maskProcessor = maskImage2.getProcessor();	
 		isResult3.addSlice(maskProcessor);
       }
       
-      impResult2 = new ImagePlus("Regions");
+      //impResult2 = new ImagePlus("Regions");
+       
+      ImageStack ResultStack = new ImageStack(); 
       
-      impResult4 = new ImagePlus("Centroid Image", getCenterOfMassImage(rt2, stacks[2].getSize()));
+      ResultStack = this.getCenterOfMassImage(rt2, stacks[0], ResultStack);
+     
+      impResult4 = new ImagePlus("Centroids", ResultStack);
+      //IJ.run(impResult4, "8-bit", "");
+      IJ.run(impResult4, "Maximum...", "radius=5 stack");
+      
+      impResult4.show();
       
       //impResult4.setTitle("Centroid Result");
       
@@ -174,51 +176,57 @@ public class TrkPP_ implements PlugInFilter {
        
     }
     
-    public ImageStack getCenterOfMassImage(ResultsTable rt, int height){
+    private ImageStack getCenterOfMassImage(ResultsTable rt, ImageStack stackOriginal, ImageStack StackResult){
     
-       //rt.show("results");
-       IJ.log(rt.getCounter() + "objects found.");
-       //IJ.log("with "+ rt.getColumnHeadings() + " headings");
+       
+      IJ.log(rt.getCounter() + "objects found.");
+       
+      ImagePlus impResult = NewImage.createImage("Centroids", stackOriginal.getWidth(), stackOriginal.getHeight(), stackOriginal.getSize(), 16, NewImage.FILL_BLACK);
+      StackResult = impResult.getImageStack();
      
-      ImageStack is = new ImageStack(this.imp.getWidth(), this.imp.getHeight());
       
-      int[] pixels = new int[this.imp.getWidth()*this.imp.getHeight()];
+     int height = stackOriginal.getSize();
+     int rtsize = rt.getCounter();
+     int XM = 0;
+     int YM = 0;
+     int slice = 0;
+     
+     
+     
+      //short[] pixels = new short[stackOriginal.getWidth()*stackOriginal.getHeight()];
       
-      IJ.log("Setting up pixel array to black. " + this.imp.getWidth()*this.imp.getHeight());
+      //for(int i = 0; i <= (stackOriginal.getWidth()*stackOriginal.getHeight())-1; i++){pixels[i] = 0;}
+      //for(int h = 1; h <= height; h++){StackResult.addSlice("1", pixels);}
       
-      for (int i=0; i<=this.imp.getWidth()*this.imp.getHeight()-1; i++){
-          
-          pixels[i] = 0;}
-      IJ.log("Adding slices: " + (height));
-      for (int n = 0; n <= height-1; n++){
-          is.addSlice(null, pixels);
-          
-          
-          //getProcessor((int)rt.getValueAsDouble(rt.getColumnIndex("Slice"), i)).setPixels(pixels);
-      }
-      
-      ImagePlus imp = new ImagePlus("result", is);
-       imp.show();
-        
-//      float[] Xm = rt.getColumn(1);
-//      float[] Ym = rt.getColumn(2);
-//      float[] Z = rt.getColumn(3);
-//      
-//      IJ.log("X: " + Xm);
-//      IJ.log("Y: " + Ym);
-//      IJ.log("Z: " + Z);
-      
+      short[] workingpixels = new short[stackOriginal.getWidth()*stackOriginal.getHeight()];
 
 
-      for(int i = 0; i <= rt.getCounter()-1; i++){
-          IJ.log("Making center of mass image at object: " + i);   
-            is.getProcessor((int)rt.getValueAsDouble(rt.getColumnIndex("Slice"), i)).putPixelValue(rt.getColumnIndex("XM"), rt.getColumnIndex("YM"), (double)255);
+      
+      //add specific points
+      
+      for(int j = 0; j <= rtsize-1; j++){
+       
+          
+          IJ.log("center mass: " + (int)rt.getValueAsDouble(rt.getColumnIndex("XM"), j)    + ", " + (int)rt.getValueAsDouble(rt.getColumnIndex("YM"), j)  + ", " + (int)rt.getValueAsDouble(rt.getColumnIndex("Slice"), j));
+          XM = (int)rt.getValueAsDouble(rt.getColumnIndex("XM"),j);
+          YM = (int)rt.getValueAsDouble(rt.getColumnIndex("YM"),j);
+          slice = (int)rt.getValueAsDouble(rt.getColumnIndex("Slice"),j);  
+         
+          //lets do pixel array math, to hell with imageprocessors
+          
+          workingpixels = (short[])StackResult.getPixels(slice);
+          
+          
+
+          workingpixels[PushingPixels.PixelPositionLinearArray.translate(XM, YM, stackOriginal.getWidth(), stackOriginal.getHeight())] = 255;     
+          
+          StackResult.setPixels(workingpixels,slice);
+  
       }
-    
-       //ImagePlus imp = new ImagePlus("result", is);
-      // imp.show();
-    
-      return is;
+          
+      
+      
+      return StackResult;
     }
     
         public ImageStack[] getInterleavedStacks(ImagePlus imp){
@@ -229,11 +237,6 @@ public class TrkPP_ implements PlugInFilter {
 			stacks[m] = new ImageStack(imp.getWidth(), imp.getHeight());
 			for(int n = m; n <= imp.getStackSize()-1; n += imp.getNChannels()){stacks[m].addSlice(stack.getProcessor(n+1));}
 		}
-//		IJ.log("microSetup::getInterleavedStacks           Generated stack array.");
-//		IJ.log("        ImagePlus height:  " + imp.getStackSize());
-//		IJ.log("        Interleaved height:  " + interleavedHeight);
-		//IJ.log("        Channel count:  " + channelCount);
-		//IJ.log("        Stack height:  " + stacks[0].getSize());
 		
 	return stacks;
 } 
