@@ -12,11 +12,11 @@
 		<relativePath />
 	</parent>
 
-	<groupId>sc.fiji</groupId>
-	<artifactId>TrkPP</artifactId>
-	<version>1.0.0</version>
+	<groupId>sw_iupui</groupId>
+	<artifactId>Trk_PP</artifactId>
+	<version>0.5.0</version>
 
-	<name>plugins/TrkPP.jar</name>
+	<name>plugins/Trk_PP.jar</name>
 	<description>A Maven project implementing an ImageJ 1.x plugin</description>
 
 	<dependencies>
@@ -56,7 +56,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<mainClass>Process_Pixels</mainClass>
+					<mainClass>Trk_PP</mainClass>
 				</configuration>
 			</plugin>
 		 <plugin>
@@ -64,8 +64,8 @@
 		  <artifactId>maven-compiler-plugin</artifactId>
 		  <version>2.3.2</version>
 		  <configuration>
-		   <source>1.7</source>
-		   <target>1.7</target>
+		   <source>1.6</source>
+		   <target>1.6</target>
 		  </configuration>
 		 </plugin>
 		</plugins>
@@ -73,7 +73,7 @@
 
 	<developers>
 		<developer>
-			<id>dscho</id>
+			<id>winfrees</id>
 			<name>Seth Winfree</name>
 			<email>winfrees@iupui.edu</email>
 			<url></url>
