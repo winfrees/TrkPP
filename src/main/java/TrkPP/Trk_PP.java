@@ -27,7 +27,8 @@
  * Trackmate to efficiently follow cells stained either with poor cell body
  * delineation, as stained by a fluid phase marker, or extended cells with
  * multiple processes as with dendritic cells.  The plugin allows for 
- * significant preprocessing of specific channels from multichannel datasets.
+ * significant preprocessing of specific channels from multichannel datasets
+ * with ImageJ core functionality.
  * 
  * General algorithm 1) clean-up cross channel signal by simple image math.
  *                   2) Dilate cleaned up image.
@@ -47,6 +48,12 @@ import ij.plugin.ImageCalculator;
 import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
+import java.awt.event.ActionEvent;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import javax.swing.JButton;
 
 
 public class Trk_PP implements PlugInFilter {
@@ -61,7 +68,7 @@ public class Trk_PP implements PlugInFilter {
     
     showDialog();
     
-    	return DOES_8G | DOES_16 | DOES_32;
+    return DOES_8G | DOES_16 | DOES_32;
                 //return DOES_8G;
     }
 
@@ -151,22 +158,22 @@ public class Trk_PP implements PlugInFilter {
 		}	
 	return stacks;
 }   
-    public void showDialog(){
+    public void showDialog() throws NullPointerException{
                        String[] YesNo = {"Yes", "No"};
                        String FileInfo = "File: " + this.imp.getTitle() + ", " + this.imp.getNChannels() + " channels, " + this.imp.getNFrames()+ " frames.";           
                         String[] Channels = new String[imp.getNChannels()+1];  
                         for(int i = 1; i <= imp.getNChannels(); i++) {Channels[0] = "";Channels[i] = "Channel " + i;}
                         
-                        String SimpleBleedThroughCorrection = "";
-                        String TargetChannel = "";
+
                         int SizeDilation = 5;               
                         int minThreshold = 2000;
                         double maxThreshold = Math.pow(2,imp.getBitDepth());  
                         int FinalObjectDiameter = 5;
-                        
+                   
                         GenericDialog gd = new GenericDialog("Tracking PreProcessing v0.1");
                         gd.addMessage("Preprocessing Options:");
                         gd.addMessage(FileInfo); 
+                        gd.add(new JButton());
                         gd.addMessage("___________________________________________");
                         gd.addChoice("Target Channel:", Channels, "Channel 2");
                         gd.addChoice("Simple Bleed Through Correction:", Channels, "Channel 1");
@@ -193,4 +200,5 @@ public class Trk_PP implements PlugInFilter {
                         this.start[7] = (int)gd.getNextNumber();
                         this.start[8] = (int)gd.getNextNumber();
                 } 
+    
 }
