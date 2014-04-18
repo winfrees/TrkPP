@@ -38,6 +38,7 @@
 package TrkPP;
 
 import ij.IJ;
+import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.GenericDialog;
@@ -59,6 +60,52 @@ import javax.swing.JButton;
 public class Trk_PP implements PlugInFilter {
 
     
+     public static void main(String[] args) {
+		// set the plugins.dir property to make the plugin appear in the Plugins menu
+		Class<?> clazz = Trk_PP.class;
+		String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
+		String pluginsDir = url.substring(5, url.length() - clazz.getName().length() - 6);
+		System.setProperty("plugins.dir", pluginsDir);
+
+		// start ImageJ
+		new ImageJ();
+
+		// run the plugin
+		IJ.runPlugIn(clazz.getName(), "");
+	}
+    
+//    public static void main(String args[]) {
+//        /* Set the Nimbus look and feel */
+//        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+//        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+//         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+//         */
+//        try {
+//            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+//                if ("Nimbus".equals(info.getName())) {
+//                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+//                    break;
+//                }
+//            }
+//        } catch (ClassNotFoundException ex) {
+//            java.util.logging.Logger.getLogger(UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        } catch (InstantiationException ex) {
+//            java.util.logging.Logger.getLogger(UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        } catch (IllegalAccessException ex) {
+//            java.util.logging.Logger.getLogger(UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+//            java.util.logging.Logger.getLogger(UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        }
+//        //</editor-fold>
+//
+//        /* Create and display the form */
+//        java.awt.EventQueue.invokeLater(new Runnable() {
+//            public void run() {
+//                new UI().setVisible(true);
+//            }
+//        });
+//    }
+    
     ImagePlus imp; 
     Object[] start = new Object[9];
     
@@ -73,7 +120,9 @@ public class Trk_PP implements PlugInFilter {
     }
 
     @Override
-    public void run(ImageProcessor ip) {     
+    public void run(ImageProcessor ip) {  
+        
+      try{  
       ImageStack[] stacks;
       ImagePlus impResult1, impResult2, impResult4;
       stacks = getInterleavedStacks(this.imp);
@@ -125,7 +174,11 @@ public class Trk_PP implements PlugInFilter {
       impResult4 = new ImagePlus("Center-of-mass image in channel " + ((Integer)start[0]), ResultStack);
       IJ.run(impResult4, "Maximum...", "radius="+start[8]+" stack"); 
       IJ.resetMinAndMax(impResult4);
-      impResult4.show();  
+      impResult4.show(); }
+      
+      catch(NullPointerException E){IJ.showMessage("Plugin error, process cancelled.");}
+      
+      
     }
     
     private ImageStack getCenterOfMassImage(ResultsTable rt, ImageStack stackOriginal, ImageStack StackResult){    
@@ -172,7 +225,6 @@ public class Trk_PP implements PlugInFilter {
                         GenericDialog gd = new GenericDialog("Tracking PreProcessing v0.1");
                         gd.addMessage("Preprocessing Options:");
                         gd.addMessage(FileInfo); 
-                        gd.add(new JButton());
                         gd.addMessage("___________________________________________");
                         gd.addChoice("Target Channel:", Channels, "Channel 2");
                         gd.addChoice("Simple Bleed Through Correction:", Channels, "Channel 1");
