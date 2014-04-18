@@ -77,8 +77,7 @@ public class Trk_PP implements PlugInFilter {
       ImageStack[] stacks;
       ImagePlus impResult1, impResult2, impResult4;
       stacks = getInterleavedStacks(this.imp);
-      ResultsTable rt1 = new ResultsTable();
-      ResultsTable rt2 = new ResultsTable();    
+      ResultsTable rt1 = new ResultsTable(), rt2 = new ResultsTable(); 
       ImageCalculator ic = new ImageCalculator();  
       impResult1 = ic.run("Subtract create stack", new ImagePlus("C3" ,stacks[(Integer)start[0]-1]), new ImagePlus("C1" ,stacks[(Integer)start[1]-1]));
       if((start[2].toString().equals(""))){impResult1 = ic.run("Subtract create stack", impResult1, new ImagePlus("C1" ,stacks[(Integer)start[2]-1]));}
@@ -86,7 +85,7 @@ public class Trk_PP implements PlugInFilter {
       ImageStack isResult1;
       ImageStack isResult2 = new ImageStack(this.imp.getWidth(), this.imp.getHeight());
       ImageStack isResult3 = new ImageStack(this.imp.getWidth(), this.imp.getHeight());
-      impResult1.setTitle("Bleed Through Subtracted");
+      impResult1.setTitle("Processed "+((Integer)start[0]));
       impResult1.show();     
       isResult1 = impResult1.getImageStack();    
       IJ.run("Set Measurements...", "area redirect=None decimal=3");   
@@ -105,7 +104,7 @@ public class Trk_PP implements PlugInFilter {
       IJ.run(impResult2, "Maximum...", "radius=5 stack");
       for(Integer c = 1; c <= (Integer)start[4]; c++){IJ.run(impResult2, "Dilate", "stack");}
       IJ.run(impResult2, "Fill Holes", "stack");
-      impResult2.show("Regions grown");    
+      impResult2.show("Mask of regions "+ ((Integer)start[0]));    
       ParticleAnalyzer maskCells = new ParticleAnalyzer(ParticleAnalyzer.SHOW_PROGRESS | ParticleAnalyzer.SHOW_MASKS, Measurements.CENTER_OF_MASS | Measurements.SLICE ,rt2, 0, (imp.getWidth()*imp.getHeight()));
       maskCells.setHideOutputImage(true); 
       int count = 1;
@@ -123,7 +122,7 @@ public class Trk_PP implements PlugInFilter {
       }   
       ImageStack ResultStack = new ImageStack();     
       ResultStack = this.getCenterOfMassImage(rt2, stacks[0], ResultStack); 
-      impResult4 = new ImagePlus("Centroids in channel " + ((Integer)start[0]), ResultStack);
+      impResult4 = new ImagePlus("Center-of-mass image in channel " + ((Integer)start[0]), ResultStack);
       IJ.run(impResult4, "Maximum...", "radius="+start[8]+" stack"); 
       IJ.resetMinAndMax(impResult4);
       impResult4.show();  

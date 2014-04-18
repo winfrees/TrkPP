@@ -61,7 +61,10 @@ ImagePlus imp;
 		ImageStack is;
 		is = this.imp.getStack();
 		float length = (float)is.getSize();	
-		float increment = (255/length)/168;		
+		float increment = (255/length)/168;
+                
+                //normalizing to 168 as TrackMate Uniform color is 168 as 8 bit
+                
 		int[][] arr1;
 		int[][] arr2;
 		int[][] arr3 = new int[is.getWidth()][is.getHeight()];		

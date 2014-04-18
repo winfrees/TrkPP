@@ -18,6 +18,8 @@
  */
 
 /**
+ * unused class, may be implemented at a later date.
+ * 
  *
  * @author Seth Winfree <Seth Winfree at Indiana University>
  */
