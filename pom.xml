@@ -14,7 +14,7 @@
 
 	<groupId>sw_iupui</groupId>
 	<artifactId>Trk_PP</artifactId>
-	<version>0.5.0</version>
+	<version>0.6.0</version>
 
 	<name>plugins/Trk_PP.jar</name>
 	<description>A Maven project implementing an ImageJ 1.x plugin</description>
@@ -75,7 +75,7 @@
 		<developer>
 			<id>winfrees</id>
 			<name>Seth Winfree</name>
-			<email>winfrees@iupui.edu</email>
+			<email>winfrees@iu.edu</email>
 			<url></url>
 			<organization>Indiana University</organization>
 			<organizationUrl>http://www.iupui.edu/</organizationUrl>

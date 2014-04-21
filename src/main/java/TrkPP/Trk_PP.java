@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2014 Indiana University
- * Authors email winfrees at iupui dot edu
+ * Author email winfrees at iupui dot edu
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,6 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * The views and conclusions contained in the software and documentation are
+ * those of the authors and should not be interpreted as representing official
+ * policies, either expressed or implied, of any organization.
  */
 
 /**
@@ -34,6 +50,8 @@
  *                   2) Dilate cleaned up image.
  *                   3) Threshold, find object centroids with particle Analyzer.
  *                   4) Plot centroids per size requirements.
+ * 
+ * 
  */
 package TrkPP;
 
@@ -41,6 +59,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.gui.NewImage;
 import ij.measure.Measurements;
@@ -49,71 +68,45 @@ import ij.plugin.ImageCalculator;
 import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
-import java.awt.event.ActionEvent;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import javax.swing.JButton;
+
 
 
 public class Trk_PP implements PlugInFilter {
 
     
-     public static void main(String[] args) {
-		// set the plugins.dir property to make the plugin appear in the Plugins menu
-		Class<?> clazz = Trk_PP.class;
-		String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
-		String pluginsDir = url.substring(5, url.length() - clazz.getName().length() - 6);
-		System.setProperty("plugins.dir", pluginsDir);
-
-		// start ImageJ
-		new ImageJ();
-
-		// run the plugin
-		IJ.runPlugIn(clazz.getName(), "");
-	}
-    
-//    public static void main(String args[]) {
-//        /* Set the Nimbus look and feel */
-//        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-//        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-//         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-//         */
-//        try {
-//            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-//                if ("Nimbus".equals(info.getName())) {
-//                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-//                    break;
-//                }
-//            }
-//        } catch (ClassNotFoundException ex) {
-//            java.util.logging.Logger.getLogger(UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-//        } catch (InstantiationException ex) {
-//            java.util.logging.Logger.getLogger(UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-//        } catch (IllegalAccessException ex) {
-//            java.util.logging.Logger.getLogger(UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-//        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-//            java.util.logging.Logger.getLogger(UI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-//        }
-//        //</editor-fold>
+//     public static void main(String[] args) {
+//		// set the plugins.dir property to make the plugin appear in the Plugins menu
+//		Class<?> clazz = Trk_PP.class;
+//		String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
+//		String pluginsDir = url.substring(5, url.length() - clazz.getName().length() - 6);
+//		System.setProperty("plugins.dir", pluginsDir);
 //
-//        /* Create and display the form */
-//        java.awt.EventQueue.invokeLater(new Runnable() {
-//            public void run() {
-//                new UI().setVisible(true);
-//            }
-//        });
-//    }
+//		// start ImageJ
+//		new ImageJ();
+//
+//		// run the plugin
+//		//IJ.runPlugIn(clazz.getName(), "");
+//	}
+    
     
     ImagePlus imp; 
-    Object[] start = new Object[9];
+    Object[] start = new Object[10];
+    boolean logging = true;
+    
     
     @Override
     public int setup(String string, ImagePlus ip) {  
     this.imp = ip;
     
-    showDialog();
+    if(showDialog()){return PlugInFilter.DONE;}
+    
+    if(start[9] == "No"){logging = false;} else {logging = true;}
+    
+    if(logging){
+          IJ.log("Starting tracking pre-processing...");
+          IJ.log("v 0.6.0");
+          IJ.log("author:  Seth Winfree, winfrees at iu dot edu, Indiana University");
+          IJ.log("___________________________________________");}
     
     return DOES_8G | DOES_16 | DOES_32;
                 //return DOES_8G;
@@ -122,24 +115,55 @@ public class Trk_PP implements PlugInFilter {
     @Override
     public void run(ImageProcessor ip) {  
         
+      
+       
       try{  
+      
+      
       ImageStack[] stacks;
-      ImagePlus impResult1, impResult2, impResult4;
+      ImagePlus impResult1, impResult2, impResult3;
       stacks = getInterleavedStacks(this.imp);
       ResultsTable rt1 = new ResultsTable(), rt2 = new ResultsTable(); 
+      
+      
+      //simple cross channel subtraction and blur
+      impResult1 = new ImagePlus();
       ImageCalculator ic = new ImageCalculator();  
-      impResult1 = ic.run("Subtract create stack", new ImagePlus("C3" ,stacks[(Integer)start[0]-1]), new ImagePlus("C1" ,stacks[(Integer)start[1]-1]));
-      if((start[2].toString().equals(""))){impResult1 = ic.run("Subtract create stack", impResult1, new ImagePlus("C1" ,stacks[(Integer)start[2]-1]));}
-      if(start[3].toString().equals("Yes")){IJ.run(impResult1, "Gaussian Blur...", "sigma=2 stack");}
+      
+      //case1
+      if((Integer)start[1] == 0 && (Integer)start[2] == 0){
+          impResult1 = new ImagePlus("target" ,stacks[(Integer)start[0]-1]);
+          if(logging){IJ.log("Basic crosstalk subtraction: NONE");}}
+      //case2
+      if((Integer)start[1] == 0 && (Integer)start[2] >= 1){
+          impResult1 = ic.run("Subtract create stack", new ImagePlus("target" ,stacks[(Integer)start[0]-1]), new ImagePlus("C2" ,stacks[(Integer)start[2]-1]));
+          if(logging){IJ.log("Basic crosstalk subtraction: Ch. " + (Integer)start[2]);}}
+      //case 3
+      if((Integer)start[1] >= 1 && (Integer)start[2] == 0){
+           impResult1 = ic.run("Subtract create stack", new ImagePlus("target" ,stacks[(Integer)start[0]-1]), new ImagePlus("C1" ,stacks[(Integer)start[1]-1]));
+           if(logging){IJ.log("Basic crosstalk subtraction: Ch. " + (Integer)start[1]);}}
+      //case4
+      if((Integer)start[1] >= 1 && (Integer)start[2] >= 1){
+       impResult1 = ic.run("Subtract create stack", new ImagePlus("target" ,stacks[(Integer)start[0]-1]), new ImagePlus("C1" ,stacks[(Integer)start[1]-1]));
+       impResult1 = ic.run("Subtract create stack", impResult1, new ImagePlus("C2" ,stacks[(Integer)start[2]-1]));
+       if(logging){IJ.log("Basic crosstalk subtraction: Ch. " + (Integer)start[1] + " then,");
+       IJ.log("Basic crosstalk subtraction: Ch. " + (Integer)start[2]);}}
+      
+     
+
+      if(start[3].toString().equals("Yes")){IJ.run(impResult1, "Gaussian Blur...", "sigma=2 stack");if(logging){IJ.log("Processing with gaussian blur.");}}
+      //
       ImageStack isResult1;
       ImageStack isResult2 = new ImageStack(this.imp.getWidth(), this.imp.getHeight());
       ImageStack isResult3 = new ImageStack(this.imp.getWidth(), this.imp.getHeight());
-      impResult1.setTitle("Processed "+((Integer)start[0]));
+      impResult1.setTitle("Processed Ch. "+((Integer)start[0]));
       impResult1.show();     
       isResult1 = impResult1.getImageStack();    
       IJ.run("Set Measurements...", "area redirect=None decimal=3");   
       ParticleAnalyzer maskParticles = new ParticleAnalyzer(ParticleAnalyzer.SHOW_PROGRESS | ParticleAnalyzer.SHOW_MASKS, 0 ,rt1, (Integer)start[7], (imp.getWidth()*imp.getHeight()));
-      maskParticles.setHideOutputImage(true);   
+      maskParticles.setHideOutputImage(true);  
+      if(logging){IJ.log("Finding objects with threshold of: " + (Integer)start[5] + " to " + (Integer)start[6] + " with ParticleAnalyzer.");}
+      if(logging){IJ.log("Limiting object to a pixel size of: " + (Integer)start[7] + " with ParticleAnalyzer.");}
       for(int n = 1; n <= stacks[2].getSize(); n++){
 		ImageProcessor ipStack = isResult1.getProcessor(n);
 		ipStack.setThreshold((Integer)start[5], (Integer)start[6], ImageProcessor.RED_LUT);
@@ -148,12 +172,16 @@ public class Trk_PP implements PlugInFilter {
 		ImageProcessor maskProcessor = maskImage1.getProcessor();	
 		isResult2.addSlice(maskProcessor);
       }    
-      impResult2 = new ImagePlus("Pre Center of Mass Measure", isResult2);
+      impResult2 = new ImagePlus("Mask of Regions Ch. " + ((Integer)start[0]), isResult2);
+      if(logging){IJ.log("Initial dilation and maximum filter with radius of 5. ");}
       IJ.run(impResult2, "Dilate", "stack");
       IJ.run(impResult2, "Maximum...", "radius=5 stack");
+      if(logging){IJ.log("Repeated dilation for " + (Integer)start[4] + " cycles.");}
       for(Integer c = 1; c <= (Integer)start[4]; c++){IJ.run(impResult2, "Dilate", "stack");}
+      if(logging){IJ.log("Filling holes in regions.");}
       IJ.run(impResult2, "Fill Holes", "stack");
-      impResult2.show("Mask of regions "+ ((Integer)start[0]));    
+      impResult2.show("Mask of regions "+ ((Integer)start[0]));
+      if(logging){IJ.log("Identifying individual cells with ParticleAnalyzer.");}
       ParticleAnalyzer maskCells = new ParticleAnalyzer(ParticleAnalyzer.SHOW_PROGRESS | ParticleAnalyzer.SHOW_MASKS, Measurements.CENTER_OF_MASS | Measurements.SLICE ,rt2, 0, (imp.getWidth()*imp.getHeight()));
       maskCells.setHideOutputImage(true); 
       int count = 1;
@@ -170,13 +198,15 @@ public class Trk_PP implements PlugInFilter {
 		isResult3.addSlice(maskProcessor);
       }   
       ImageStack ResultStack = new ImageStack();     
-      ResultStack = this.getCenterOfMassImage(rt2, stacks[0], ResultStack); 
-      impResult4 = new ImagePlus("Center-of-mass image in channel " + ((Integer)start[0]), ResultStack);
-      IJ.run(impResult4, "Maximum...", "radius="+start[8]+" stack"); 
-      IJ.resetMinAndMax(impResult4);
-      impResult4.show(); }
+      ResultStack = this.getCenterOfMassImage(rt2, stacks[0], ResultStack);
+      if(logging){IJ.log("Generating center-of-mass image with a radius of " + (Integer)start[8] + ".");}
+      impResult3 = new ImagePlus("Center-of-mass image Ch. " + ((Integer)start[0]), ResultStack);
+      IJ.run(impResult3, "Maximum...", "radius="+start[8]+" stack"); 
+      IJ.resetMinAndMax(impResult3);
+      if(logging){IJ.log("___________________________________________");}
+      impResult3.show(); }
       
-      catch(NullPointerException E){IJ.showMessage("Plugin error, process cancelled.");}
+      catch(NullPointerException E){IJ.showMessage("Plugin error, process cancelled."); if(logging){IJ.log("...out of memory error.");IJ.log("___________________________________________");}}
       
       
     }
@@ -210,36 +240,45 @@ public class Trk_PP implements PlugInFilter {
 		}	
 	return stacks;
 }   
-    public void showDialog() throws NullPointerException{
+    public boolean showDialog() throws NullPointerException{
                        String[] YesNo = {"Yes", "No"};
-                       String FileInfo = "File: " + this.imp.getTitle() + ", " + this.imp.getNChannels() + " channels, " + this.imp.getNFrames()+ " frames.";           
-                        String[] Channels = new String[imp.getNChannels()+1];  
-                        for(int i = 1; i <= imp.getNChannels(); i++) {Channels[0] = "";Channels[i] = "Channel " + i;}
+                       String FileInfo = "File: " + this.imp.getTitle();   
+                       String FileDetail = "for, " + this.imp.getNChannels() + " channels, " + this.imp.getNFrames()+ " frames.";
+                        String[] Channels = new String[imp.getNChannels()+1];
+                        Channels[0] = "";
+                        for(int i = 1; i <= imp.getNChannels(); i++) {Channels[i] = "Channel " + i;}
                         
-
-                        int SizeDilation = 5;               
-                        int minThreshold = 2000;
-                        double maxThreshold = Math.pow(2,imp.getBitDepth());  
-                        int FinalObjectDiameter = 5;
+                        
+                        
+                        int SizeDilation = Prefs.getInt("trkpppref.TrkPP_4", 5);               
+                        int minThreshold = Prefs.getInt("trkpppref.TrkPP_5", 1000);
+                        double maxThreshold = Prefs.get("trkpppref.TrkPP_6", Math.pow(2,imp.getBitDepth())-1); 
+                        int minCellSize = Prefs.getInt("trkpppref.TrkPP_7", 5);
+                         
+                        int FinalObjectDiameter = Prefs.getInt("trkpppref.TrkPP_8", 5);
                    
-                        GenericDialog gd = new GenericDialog("Tracking PreProcessing v0.1");
+                        GenericDialog gd = new GenericDialog("Tracking PreProcessing v0.6");
                         gd.addMessage("Preprocessing Options:");
                         gd.addMessage(FileInfo); 
+                        gd.addMessage(FileDetail);
                         gd.addMessage("___________________________________________");
-                        gd.addChoice("Target Channel:", Channels, "Channel 2");
+                        gd.addChoice("Target Channel:", Channels, "Channel 3");
                         gd.addChoice("Simple Bleed Through Correction:", Channels, "Channel 1");
-                        gd.addChoice("Second Bleed Through Correction:", Channels, "Do not process");
-                        gd.addRadioButtonGroup("Smooth target:", YesNo, 1, 1, YesNo[0]); 
+                        gd.addChoice("Second Bleed Through Correction:", Channels, "");
+                        gd.addRadioButtonGroup("Smooth target:", YesNo, 1, 1, Prefs.get("trkpppref.TrkPP_3", "No")); 
                         gd.addNumericField("Size dilation", SizeDilation, 0);
                         gd.addMessage("Intensity Thresholds:");
                         gd.addNumericField("Min", minThreshold, 0);
                         gd.addNumericField("Max", maxThreshold, 0);
-                        gd.addNumericField("Minimum cell size", 15, 2);
+                        gd.addNumericField("Minimum cell size", minCellSize, 0);
                         gd.addNumericField("Final object diameter", FinalObjectDiameter, 0);
+                        gd.addMessage("___________________________________________");
+                        gd.addRadioButtonGroup("Logging:", YesNo, 1, 1, Prefs.get("trkpppref.TrkPP_9", "Yes")); 
                         gd.addMessage("Interface for preprocessing of tracking analysis");
-                        gd.addMessage("Author: Seth Winfree Indiana University   04/4/2014");
+                        gd.addMessage("Author: Seth Winfree Indiana University   04/04/2014");
                         gd.showDialog();
-                        if (gd.wasCanceled()) {return;}
+                        if (gd.wasCanceled()) {return true;}
+                        
                         
                         this.start[0] = gd.getNextChoiceIndex();
                         this.start[1] = gd.getNextChoiceIndex();
@@ -250,6 +289,23 @@ public class Trk_PP implements PlugInFilter {
                         this.start[6] = (int)gd.getNextNumber();
                         this.start[7] = (int)gd.getNextNumber();
                         this.start[8] = (int)gd.getNextNumber();
+                        this.start[9] =  gd.getNextRadioButton();
+                        
+                        Prefs.set("trkpppref.TrkPP_0", (Integer)start[0]);
+                        Prefs.set("trkpppref.TrkPP_1", (Integer)start[1]);
+                        Prefs.set("trkpppref.TrkPP_2", (Integer)start[2]);
+                        Prefs.set("trkpppref.TrkPP_3", start[3].toString());
+                        Prefs.set("trkpppref.TrkPP_4", (Integer)start[4]);
+                        Prefs.set("trkpppref.TrkPP_5", (Integer)start[5]);
+                        Prefs.set("trkpppref.TrkPP_6", (Integer)start[6]);
+                        Prefs.set("trkpppref.TrkPP_7", (Integer)start[7]);
+                        Prefs.set("trkpppref.TrkPP_8", (Integer)start[8]);
+                        Prefs.set("trkpppref.TrkPP_9", start[9].toString());
+                       
+                        
+                        if (this.start[0] == null) {IJ.showMessage("Target channel required."); showDialog();}
+                        
+                        return false;
                 } 
     
 }
