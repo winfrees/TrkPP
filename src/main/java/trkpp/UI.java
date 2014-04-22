@@ -24,7 +24,7 @@
  * @author Seth Winfree <Seth Winfree at Indiana University>
  */
 
-package TrkPP;
+package trkpp;
 
 public class UI extends javax.swing.JFrame {
 

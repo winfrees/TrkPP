@@ -38,6 +38,8 @@
  * @author Seth Winfree <Seth Winfree at Indiana University>
  */
 
+
+
 /**
  * Trk_PP is a preprocessing plugin for modifying datasets to allow the plugin
  * Trackmate to efficiently follow cells stained either with poor cell body
@@ -53,7 +55,7 @@
  * 
  * 
  */
-package TrkPP;
+package trkpp;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -73,6 +75,8 @@ import ij.process.ImageProcessor;
 
 public class Trk_PP implements PlugInFilter {
 
+ //for running as a minimal imageJ, https://github.com/imagej/minimal-ij1-plugin
+ //uncomment the following main method.
     
 //     public static void main(String[] args) {
 //		// set the plugins.dir property to make the plugin appear in the Plugins menu
@@ -95,12 +99,11 @@ public class Trk_PP implements PlugInFilter {
     
     
     @Override
-    public int setup(String string, ImagePlus ip) {  
+    public int setup(final String string, final ImagePlus ip) {  
     this.imp = ip;
     
     if(showDialog()){return PlugInFilter.DONE;}
-    
-    if(start[9] == "No"){logging = false;} else {logging = true;}
+    logging = start[9] != "No";
     
     if(logging){
           IJ.log("Starting tracking pre-processing...");
@@ -113,37 +116,29 @@ public class Trk_PP implements PlugInFilter {
     }
 
     @Override
-    public void run(ImageProcessor ip) {  
-        
-      
-       
+    public void run(final ImageProcessor ip) {  
       try{  
-      
-      
       ImageStack[] stacks;
       ImagePlus impResult1, impResult2, impResult3;
       stacks = getInterleavedStacks(this.imp);
-      ResultsTable rt1 = new ResultsTable(), rt2 = new ResultsTable(); 
-      
-      
+      final ResultsTable rt1 = new ResultsTable(), rt2 = new ResultsTable(); 
       //simple cross channel subtraction and blur
-      impResult1 = new ImagePlus();
+      //impResult1 = new ImagePlus();
       ImageCalculator ic = new ImageCalculator();  
-      
-      //case1
+
       if((Integer)start[1] == 0 && (Integer)start[2] == 0){
           impResult1 = new ImagePlus("target" ,stacks[(Integer)start[0]-1]);
           if(logging){IJ.log("Basic crosstalk subtraction: NONE");}}
-      //case2
-      if((Integer)start[1] == 0 && (Integer)start[2] >= 1){
+     
+      else if((Integer)start[1] == 0 && (Integer)start[2] >= 1){
           impResult1 = ic.run("Subtract create stack", new ImagePlus("target" ,stacks[(Integer)start[0]-1]), new ImagePlus("C2" ,stacks[(Integer)start[2]-1]));
           if(logging){IJ.log("Basic crosstalk subtraction: Ch. " + (Integer)start[2]);}}
-      //case 3
-      if((Integer)start[1] >= 1 && (Integer)start[2] == 0){
+      
+      else if((Integer)start[1] >= 1 && (Integer)start[2] == 0){
            impResult1 = ic.run("Subtract create stack", new ImagePlus("target" ,stacks[(Integer)start[0]-1]), new ImagePlus("C1" ,stacks[(Integer)start[1]-1]));
            if(logging){IJ.log("Basic crosstalk subtraction: Ch. " + (Integer)start[1]);}}
       //case4
-      if((Integer)start[1] >= 1 && (Integer)start[2] >= 1){
+      else {
        impResult1 = ic.run("Subtract create stack", new ImagePlus("target" ,stacks[(Integer)start[0]-1]), new ImagePlus("C1" ,stacks[(Integer)start[1]-1]));
        impResult1 = ic.run("Subtract create stack", impResult1, new ImagePlus("C2" ,stacks[(Integer)start[2]-1]));
        if(logging){IJ.log("Basic crosstalk subtraction: Ch. " + (Integer)start[1] + " then,");
@@ -154,22 +149,22 @@ public class Trk_PP implements PlugInFilter {
       if(start[3].toString().equals("Yes")){IJ.run(impResult1, "Gaussian Blur...", "sigma=2 stack");if(logging){IJ.log("Processing with gaussian blur.");}}
       //
       ImageStack isResult1;
-      ImageStack isResult2 = new ImageStack(this.imp.getWidth(), this.imp.getHeight());
-      ImageStack isResult3 = new ImageStack(this.imp.getWidth(), this.imp.getHeight());
+      final ImageStack isResult2 = new ImageStack(this.imp.getWidth(), this.imp.getHeight());
+      final ImageStack isResult3 = new ImageStack(this.imp.getWidth(), this.imp.getHeight());
       impResult1.setTitle("Processed Ch. "+((Integer)start[0]));
       impResult1.show();     
       isResult1 = impResult1.getImageStack();    
       IJ.run("Set Measurements...", "area redirect=None decimal=3");   
-      ParticleAnalyzer maskParticles = new ParticleAnalyzer(ParticleAnalyzer.SHOW_PROGRESS | ParticleAnalyzer.SHOW_MASKS, 0 ,rt1, (Integer)start[7], (imp.getWidth()*imp.getHeight()));
+      final ParticleAnalyzer maskParticles = new ParticleAnalyzer(ParticleAnalyzer.SHOW_PROGRESS | ParticleAnalyzer.SHOW_MASKS, 0 ,rt1, (Integer)start[7], (imp.getWidth()*imp.getHeight()));
       maskParticles.setHideOutputImage(true);  
       if(logging){IJ.log("Finding objects with threshold of: " + (Integer)start[5] + " to " + (Integer)start[6] + " with ParticleAnalyzer.");}
       if(logging){IJ.log("Limiting object to a pixel size of: " + (Integer)start[7] + " with ParticleAnalyzer.");}
       for(int n = 1; n <= stacks[2].getSize(); n++){
-		ImageProcessor ipStack = isResult1.getProcessor(n);
+		final ImageProcessor ipStack = isResult1.getProcessor(n);
 		ipStack.setThreshold((Integer)start[5], (Integer)start[6], ImageProcessor.RED_LUT);
 		maskParticles.analyze(impResult1, ipStack);
-		ImagePlus maskImage1 = maskParticles.getOutputImage();
-		ImageProcessor maskProcessor = maskImage1.getProcessor();	
+		final ImagePlus maskImage1 = maskParticles.getOutputImage();
+		final ImageProcessor maskProcessor = maskImage1.getProcessor();	
 		isResult2.addSlice(maskProcessor);
       }    
       impResult2 = new ImagePlus("Mask of Regions Ch. " + ((Integer)start[0]), isResult2);
@@ -182,19 +177,19 @@ public class Trk_PP implements PlugInFilter {
       IJ.run(impResult2, "Fill Holes", "stack");
       impResult2.show("Mask of regions "+ ((Integer)start[0]));
       if(logging){IJ.log("Identifying individual cells with ParticleAnalyzer.");}
-      ParticleAnalyzer maskCells = new ParticleAnalyzer(ParticleAnalyzer.SHOW_PROGRESS | ParticleAnalyzer.SHOW_MASKS, Measurements.CENTER_OF_MASS | Measurements.SLICE ,rt2, 0, (imp.getWidth()*imp.getHeight()));
+      final ParticleAnalyzer maskCells = new ParticleAnalyzer(ParticleAnalyzer.SHOW_PROGRESS | ParticleAnalyzer.SHOW_MASKS, Measurements.CENTER_OF_MASS | Measurements.SLICE ,rt2, 0, (imp.getWidth()*imp.getHeight()));
       maskCells.setHideOutputImage(true); 
       int count = 1;
       int end;
        for(int n = 1; n <= stacks[2].getSize(); n++){   
-		ImageProcessor ipStack = isResult2.getProcessor(n); 
+		final ImageProcessor ipStack = isResult2.getProcessor(n); 
 		ipStack.setThreshold(150, 255, ImageProcessor.RED_LUT);
 		maskCells.analyze(impResult2, ipStack);
                 end = rt2.getCounter();
                 for(int m = count; m <= end-1; m++ ){rt2.setValue("Slice", m, n);}
                 count = end;
-		ImagePlus maskImage2 = maskParticles.getOutputImage();
-		ImageProcessor maskProcessor = maskImage2.getProcessor();	
+		final ImagePlus maskImage2 = maskParticles.getOutputImage();
+		final ImageProcessor maskProcessor = maskImage2.getProcessor();	
 		isResult3.addSlice(maskProcessor);
       }   
       ImageStack ResultStack = new ImageStack();     
@@ -214,8 +209,8 @@ public class Trk_PP implements PlugInFilter {
     private ImageStack getCenterOfMassImage(ResultsTable rt, ImageStack stackOriginal, ImageStack StackResult){    
       ImagePlus impResult = NewImage.createImage("Centroids", stackOriginal.getWidth(), stackOriginal.getHeight(), stackOriginal.getSize(), 16, NewImage.FILL_BLACK);
       StackResult = impResult.getImageStack();  
-     int height = stackOriginal.getSize();
-     int rtsize = rt.getCounter();
+     final int height = stackOriginal.getSize();
+     final int rtsize = rt.getCounter();
      int XM;
      int YM;
      int slice;   
@@ -225,13 +220,13 @@ public class Trk_PP implements PlugInFilter {
           YM = (int)rt.getValueAsDouble(rt.getColumnIndex("YM"),j);
           slice = (int)rt.getValueAsDouble(rt.getColumnIndex("Slice"),j);  
           workingpixels = (short[])StackResult.getPixels(slice);
-          workingpixels[PushingPixels.PixelPositionLinearArray.translate(XM, YM, stackOriginal.getWidth(), stackOriginal.getHeight())] = 255;     
+          workingpixels[pushingpixels.PixelPositionLinearArray.translate(XM, YM, stackOriginal.getWidth(), stackOriginal.getHeight())] = 255;     
           StackResult.setPixels(workingpixels,slice);
       }
       return StackResult;
     }
     
-    public ImageStack[] getInterleavedStacks(ImagePlus imp){
+    public ImageStack[] getInterleavedStacks(final ImagePlus imp){
 	ImageStack[] stacks = new ImageStack[imp.getNChannels()];
 	ImageStack stack = imp.getImageStack();
 		for(int m = 0; m <= imp.getNChannels()-1; m++){
@@ -241,23 +236,23 @@ public class Trk_PP implements PlugInFilter {
 	return stacks;
 }   
     public boolean showDialog() throws NullPointerException{
-                       String[] YesNo = {"Yes", "No"};
-                       String FileInfo = "File: " + this.imp.getTitle();   
-                       String FileDetail = "for, " + this.imp.getNChannels() + " channels, " + this.imp.getNFrames()+ " frames.";
+                       final String[] YesNo = {"Yes", "No"};
+                       final String FileInfo = "File: " + this.imp.getTitle();   
+                       final String FileDetail = "for, " + this.imp.getNChannels() + " channels, " + this.imp.getNFrames()+ " frames.";
                         String[] Channels = new String[imp.getNChannels()+1];
                         Channels[0] = "";
                         for(int i = 1; i <= imp.getNChannels(); i++) {Channels[i] = "Channel " + i;}
                         
                         
                         
-                        int SizeDilation = Prefs.getInt("trkpppref.TrkPP_4", 5);               
-                        int minThreshold = Prefs.getInt("trkpppref.TrkPP_5", 1000);
-                        double maxThreshold = Prefs.get("trkpppref.TrkPP_6", Math.pow(2,imp.getBitDepth())-1); 
-                        int minCellSize = Prefs.getInt("trkpppref.TrkPP_7", 5);
+                        final int SizeDilation = Prefs.getInt("trkpppref.TrkPP_4", 5);               
+                        final int minThreshold = Prefs.getInt("trkpppref.TrkPP_5", 1000);
+                        final double maxThreshold = Prefs.get("trkpppref.TrkPP_6", Math.pow(2,imp.getBitDepth())-1); 
+                        final int minCellSize = Prefs.getInt("trkpppref.TrkPP_7", 5);
                          
-                        int FinalObjectDiameter = Prefs.getInt("trkpppref.TrkPP_8", 5);
+                        final int FinalObjectDiameter = Prefs.getInt("trkpppref.TrkPP_8", 5);
                    
-                        GenericDialog gd = new GenericDialog("Tracking PreProcessing v0.6");
+                        final GenericDialog gd = new GenericDialog("Tracking PreProcessing v0.6");
                         gd.addMessage("Preprocessing Options:");
                         gd.addMessage(FileInfo); 
                         gd.addMessage(FileDetail);
@@ -278,8 +273,6 @@ public class Trk_PP implements PlugInFilter {
                         gd.addMessage("Author: Seth Winfree Indiana University   04/04/2014");
                         gd.showDialog();
                         if (gd.wasCanceled()) {return true;}
-                        
-                        
                         this.start[0] = gd.getNextChoiceIndex();
                         this.start[1] = gd.getNextChoiceIndex();
                         this.start[2] = gd.getNextChoiceIndex();
@@ -289,8 +282,7 @@ public class Trk_PP implements PlugInFilter {
                         this.start[6] = (int)gd.getNextNumber();
                         this.start[7] = (int)gd.getNextNumber();
                         this.start[8] = (int)gd.getNextNumber();
-                        this.start[9] =  gd.getNextRadioButton();
-                        
+                        this.start[9] =  gd.getNextRadioButton();                  
                         Prefs.set("trkpppref.TrkPP_0", (Integer)start[0]);
                         Prefs.set("trkpppref.TrkPP_1", (Integer)start[1]);
                         Prefs.set("trkpppref.TrkPP_2", (Integer)start[2]);
@@ -301,11 +293,8 @@ public class Trk_PP implements PlugInFilter {
                         Prefs.set("trkpppref.TrkPP_7", (Integer)start[7]);
                         Prefs.set("trkpppref.TrkPP_8", (Integer)start[8]);
                         Prefs.set("trkpppref.TrkPP_9", start[9].toString());
-                       
-                        
-                        if (this.start[0] == null) {IJ.showMessage("Target channel required."); showDialog();}
-                        
+       
+                        if (this.start[0] == null) {IJ.showMessage("Target channel required."); showDialog();}        
                         return false;
-                } 
-    
+                }   
 }

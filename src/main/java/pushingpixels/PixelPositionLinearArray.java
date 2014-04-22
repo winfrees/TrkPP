@@ -22,7 +22,7 @@
  * @author Seth Winfree <Seth Winfree at Indiana University>
  */
 
-package PushingPixels;
+package pushingpixels;
 
 public class  PixelPositionLinearArray {
     

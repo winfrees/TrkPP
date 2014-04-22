@@ -33,7 +33,7 @@
  * at: https://github.com/fiji/TrackMate/  this seems imminent
  */
 
-package TrkPP;
+package trkpp;
 
 import ij.IJ;
 import ij.ImagePlus;
